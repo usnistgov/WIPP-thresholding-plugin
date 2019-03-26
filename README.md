@@ -2,12 +2,11 @@
 
 ## Building
 
-To build from source code, run ./mvn-packager.sh
+To build from source code, run 
+`./mvn-packager.sh`
 
-The pre-built jar file can be found in the target folder.
-
-To build the Docker image for the thresholding plugin,
-run `docker build -t wipp-thresh-plugin` or `./build-docker.sh`.
+To build the Docker image for the thresholding plugin, run 
+`docker build -t wipp-thresh-plugin` or `./build-docker.sh`.
 
 ## Thresholdtype options
 
