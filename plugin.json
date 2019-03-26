@@ -1,10 +1,10 @@
 {
 	"name": "ThresholdingPlugin",
-	"version": "0.1.0",
+	"version": "0.1.2",
 	"title": "Thresholding plugin",
-	"description": "Lorem ipsum dolor sit amet",
-	"containerId": "wipp-thresh:0.1",
-	
+	"description": "Thresholding methods from ImageJ",
+	"containerId": "wipp/wipp-thresh-plugin:0.1.2",
+
 	"inputs": [
 		{
 			"name": "input",
@@ -15,7 +15,7 @@
 			"description": "Images inputs for the plugin."
 		},
 		{
-			"name": "thresholdType",
+			"name": "thresholdtype",
 			"type": "enum",
 			"options": {
 				"values": [
@@ -42,7 +42,7 @@
 			"description": "Threshold type for this plugin"
 		},
 		{
-			"name": "thresholdValue",
+			"name": "thresholdvalue",
 			"type": "number",
 			"required": false,
 			"description": "Threshold value for manual setting"
@@ -65,12 +65,12 @@
 			"description": "Pick a collection..."
 		},
 		{
-			"key": "inputs.thresholdType",
+			"key": "inputs.thresholdtype",
 			"title": "Threshold Type"
 		},
 		{
-			"key": "inputs.thresholdValue",
-			"condition": "model.inputs.thresholdType=='Manual'"
+			"key": "inputs.thresholdvalue",
+			"condition": "model.inputs.thresholdtype=='Manual'"
 		}
 	]
 }
