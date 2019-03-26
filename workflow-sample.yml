@@ -1,0 +1,49 @@
+---
+apiVersion: "argoproj.io/v1alpha1"
+kind: "Workflow"
+metadata:
+  generateName: "thresholding-sample"
+spec:
+  entrypoint: "workflow"
+  templates:
+  - name: "threshold-plugin"
+    inputs:
+      parameters:
+      - name: "input"
+      - name: "thresholdtype"
+      - name: "thresholdvalue"
+      - name: "output"
+    container:
+      image: "localhost:5000/wippthresh:0.1"
+      args:
+      - "--input"
+      - "{{inputs.parameters.input}}"
+      - "--thresholdtype"
+      - "{{inputs.parameters.thresholdtype}}"
+      - "--thresholdvalue"
+      - "{{inputs.parameters.thresholdvalue}}"
+      - "--output"
+      - "{{inputs.parameters.output}}"
+      volumeMounts:
+      - mountPath: "/data/"
+        name: "data-volume"
+  - name: "workflow"
+    dag:
+      tasks:
+      - name: "thresholding-sample-1"
+        template: "threshold-plugin"
+        arguments:
+          parameters:
+          - name: "input"
+            value: "/data/input"
+          - name: "thresholdtype"
+            value: "Manual"
+          - name: "thresholdvalue"
+            value: "150"
+          - name: "output"
+            value: "/data/thresholding-sample/1"
+  volumes:
+  - name: "data-volume"
+    hostPath:
+      path: "/path/to/data/"
+      type: "Directory"

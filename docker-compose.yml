@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+
+  threshold:
+    image: localhost:5000/wippthresh:0.1
+    environment:
+      - MOUNT_POINT=${MOUNT_POINT}
+    volumes:
+      - ${MOUNT_POINT}/test/inputs:/data/inputs
+      - ${MOUNT_POINT}/test/outputs:/data/outputs
+      
