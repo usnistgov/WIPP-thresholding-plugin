@@ -11,6 +11,17 @@
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>ome</groupId>
+			<artifactId>formats-gpl</artifactId>
+			<version>6.0.1</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>ome</groupId>
+			<artifactId>bio-formats_plugins</artifactId>
+			<version>6.1.0-m2</version>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/net.imagej/imagej -->
 		<dependency>
 			<groupId>net.imagej</groupId>
@@ -24,7 +35,12 @@
 		</dependency>
 	</dependencies>
 
+
 	<repositories>
+		<repository>
+			<id>ome.releases</id>
+			<url>http://artifacts.openmicroscopy.org/artifactory/ome.releases</url>
+		</repository>
 		<repository>
 			<id>imagej-releases</id>
 			<name>ImageJ Repository</name>
