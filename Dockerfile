@@ -1,19 +1,9 @@
-FROM ubuntu
-MAINTAINER Mohamed Ouladi
+FROM openjdk:8-jdk-alpine
+LABEL maintainer="National Institue of Standards and Technology"
 
 ENV DEBIAN_FRONTEND noninteractive
 ARG EXEC_DIR="/opt/executables"
 ARG DATA_DIR="/data"
-
-#Prerequisites
-RUN apt-get update -y \
-    && apt-get install -y software-properties-common
-
-#Install java 8
-RUN add-apt-repository ppa:openjdk-r/ppa -y \
-    && apt-get update \
-    && apt-get install -y openjdk-8-jdk \
-    && update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
 #Create folders
 RUN mkdir -p ${EXEC_DIR} \
@@ -21,12 +11,11 @@ RUN mkdir -p ${EXEC_DIR} \
     && mkdir ${DATA_DIR}/outputs
 
 #Copy executable
-COPY target/wipp-thresholding-plugin-0.0.1-SNAPSHOT-jar-with-dependencies.jar ${EXEC_DIR}/.
+COPY target/wipp-thresholding-plugin-0.0.1-SNAPSHOT-jar-with-dependencies.jar ${EXEC_DIR}/wipp-thresholding-plugin.jar
 #COPY dist/Thresholding/target/threshLaunch.sh ${EXEC_DIR}/.
 
-#RUN chmod u+x ${EXEC_DIR}/threshLaunch.sh
+# Set working directory
 WORKDIR ${EXEC_DIR}
 
 # Default command. Additional arguments are provided through the command line
-ENTRYPOINT ["java", "-jar", "wipp-thresholding-plugin-0.0.1-SNAPSHOT-jar-with-dependencies.jar"]
-
+ENTRYPOINT ["/usr/bin/java", "-jar", "wipp-thresholding-plugin.jar"]
