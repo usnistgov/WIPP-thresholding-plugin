@@ -16,23 +16,25 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ij.ImagePlus;
+import loci.common.DebugTools;
 import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 
 /**
  * @author Mylene Simon <mylene.simon at nist.gov>
- *
+ * @author Mohamed Ouladi <mohamed.ouladi at nist.gov>
  */
 public class BioFormatsUtils {
 	
 	private static final Logger LOGGER = Logger.getLogger(BioFormatsUtils.class.getName()); 
 	
 	public static ImagePlus readImage(String filepath) {
+		DebugTools.enableLogging("OFF");
 		ImagePlus imp;
 
 		File file = new File(filepath);
 		LOGGER.log(Level.INFO, "Loading " + file.getName() + " using BioFormats");
-
+		
 		try {
 			ImporterOptions options = new ImporterOptions();
 			options.setId(file.getAbsolutePath());

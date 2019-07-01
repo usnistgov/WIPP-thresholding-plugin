@@ -20,6 +20,7 @@ import gov.nist.itl.ssd.thresholding.utils.BioFormatsUtils;
 
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
+import loci.common.DebugTools;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
@@ -60,6 +61,8 @@ public class ThresholdingProcessor {
 	}
 
 	public void runTresh() throws IOException {
+		DebugTools.enableLogging("OFF");
+		
 		if (inputFolder == null) {
 			throw new NullPointerException("Input folder is null");
 		}
@@ -235,7 +238,6 @@ public class ThresholdingProcessor {
 			File outputFile = new File(outputFolder, tile.getName());
 			OMEXMLMetadata metadata = getMetadata(tile);
 			PixelType pxlType = metadata.getPixelsType(0);
-			System.out.println("pixel type: " + pxlType);
 			
 			byte[] bytesArr = null;
 			
