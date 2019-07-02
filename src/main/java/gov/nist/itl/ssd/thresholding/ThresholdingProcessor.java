@@ -15,6 +15,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import gov.nist.itl.ssd.thresholding.utils.BioFormatsUtils;
 
@@ -43,6 +45,7 @@ public class ThresholdingProcessor {
 
 	// Tile size used in WIPP
 	private static final int TILE_SIZE = 1024;
+	private static final Logger LOGGER = Logger.getLogger(ThresholdingProcessor.class.getName()); 
 
 	public File inputFolder;
 	public File outputFolder;
@@ -61,7 +64,6 @@ public class ThresholdingProcessor {
 	}
 
 	public void runTresh() throws IOException {
-		DebugTools.enableLogging("OFF");
 		
 		if (inputFolder == null) {
 			throw new NullPointerException("Input folder is null");
@@ -243,11 +245,11 @@ public class ThresholdingProcessor {
 			
 			switch(pxlType) {
 				case UINT8:
-					System.out.println("\n" + tile.getName() + " is an 8bpp image\n");
+					LOGGER.log(Level.INFO, tile.getName() + " is an 8bpp image");
 					bytesArr = (byte[]) ip.getPixels();
 					break;
 				case UINT16: 
-					System.out.println("\n" + tile.getName() + " is a 16bpp image\n");
+					LOGGER.log(Level.INFO, tile.getName() + " is an 16bpp image");
 					short[] shorts = (short[]) ip.getPixels();
 					
 					//Converting short array to bytes array
@@ -258,7 +260,8 @@ public class ThresholdingProcessor {
 					bytesArr = byteShortBuf.array();
 					break;
 				case FLOAT:
-					System.out.println("\n" + tile.getName() + " is a 32bpp image\n");
+					LOGGER.log(Level.INFO, tile.getName() + " is an 32bpp image.");
+					LOGGER.log(Level.INFO, "32bpp images are not handled by the thresholding plugin. Please convert the image to an 8bpp or a 16bpp image.");
 					float[] floats = (float[]) ip.getPixels();
 					
 					//Converting int array to bytes array
@@ -269,7 +272,7 @@ public class ThresholdingProcessor {
 					bytesArr = byteFloatBuf.array();
 					break;
 				default:
-					System.out.println("\nImage type is not 8bpp, 16bpp or 32bpp\n");
+					LOGGER.log(Level.INFO, tile.getName() + " Image type is not 8bpp, 16bpp or 32bpp");
 			}
 
 

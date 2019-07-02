@@ -29,7 +29,7 @@ public class BioFormatsUtils {
 	private static final Logger LOGGER = Logger.getLogger(BioFormatsUtils.class.getName()); 
 	
 	public static ImagePlus readImage(String filepath) {
-		DebugTools.enableLogging("OFF");
+		DebugTools.enableLogging("INFO");
 		ImagePlus imp;
 
 		File file = new File(filepath);
