@@ -63,7 +63,7 @@ public class ThresholdingProcessor {
 		this.nbCpus = nbCpus;
 	}
 
-	public void runTresh() throws IOException {
+	public void runTresh() throws IOException, Exception {
 		
 		if (inputFolder == null) {
 			throw new NullPointerException("Input folder is null");
@@ -75,8 +75,8 @@ public class ThresholdingProcessor {
 			}
 		});
 
-		if (tiles == null) {
-			throw new NullPointerException("Input folder is empty");
+		if (tiles == null || tiles.length == 0) {
+			throw new NullPointerException("Input folder is empty or no images were found.");
 		}
 
 		boolean created = outputFolder.mkdirs();
@@ -196,10 +196,10 @@ public class ThresholdingProcessor {
 			/////////////////////////////////////////
 			double min = ip.getMin();
 			double max = ip.getMax();
-			System.out.println("INFO: min ="+ min + ", max=" + max);
+			LOGGER.log(Level.INFO, "min = " + min + ", max=" + max);
 
 //			threshold = 0.5*(max+min);//this.threshold;
-			System.out.println("INFO: thresh ="+ threshold);
+			LOGGER.log(Level.INFO, "thresh = " + threshold);
 
 			// saves out the threshold value from auto-threshold methods
 /*			File f = new File(outputFolder, "threshold.txt");
@@ -249,7 +249,7 @@ public class ThresholdingProcessor {
 					bytesArr = (byte[]) ip.getPixels();
 					break;
 				case UINT16: 
-					LOGGER.log(Level.INFO, tile.getName() + " is an 16bpp image");
+					LOGGER.log(Level.INFO, tile.getName() + " is a 16bpp image");
 					short[] shorts = (short[]) ip.getPixels();
 					
 					//Converting short array to bytes array
@@ -260,19 +260,13 @@ public class ThresholdingProcessor {
 					bytesArr = byteShortBuf.array();
 					break;
 				case FLOAT:
-					LOGGER.log(Level.INFO, tile.getName() + " is an 32bpp image.");
+					LOGGER.log(Level.INFO, tile.getName() + " is a 32bpp image.");
 					LOGGER.log(Level.INFO, "32bpp images are not handled by the thresholding plugin. Please convert the image to an 8bpp or a 16bpp image.");
-					float[] floats = (float[]) ip.getPixels();
-					
-					//Converting int array to bytes array
-					ByteBuffer byteFloatBuf = ByteBuffer.allocate(floats.length*4);
-					for (float f: floats) {
-						byteFloatBuf.putFloat(f);
-					}
-					bytesArr = byteFloatBuf.array();
-					break;
+					throw new Exception("Wrong image type!");
 				default:
-					LOGGER.log(Level.INFO, tile.getName() + " Image type is not 8bpp, 16bpp or 32bpp");
+					LOGGER.log(Level.INFO, "the type of this image: " + tile.getName() + " is not 8bpp nor 16bpp");
+					LOGGER.log(Level.INFO, "Please convert the image type to 8bpp or 16bpp.");
+					throw new Exception("Wrong image type!");
 			}
 
 
