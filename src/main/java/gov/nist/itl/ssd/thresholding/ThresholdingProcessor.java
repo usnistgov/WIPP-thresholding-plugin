@@ -45,7 +45,9 @@ public class ThresholdingProcessor {
 
 	// Tile size used in WIPP
 	private static final int TILE_SIZE = 1024;
-	private static final Logger LOGGER = Logger.getLogger(ThresholdingProcessor.class.getName()); 
+	private static final Logger LOGGER = Logger.getLogger(ThresholdingProcessor.class.getName());
+	private int width;
+	private int height;
 
 	public File inputFolder;
 	public File outputFolder;
@@ -236,7 +238,7 @@ public class ThresholdingProcessor {
 				ip.setThreshold(data.length - 1, data.length - 1, ImageProcessor.NO_LUT_UPDATE);
 				//}
 			}
-
+			
 			File outputFile = new File(outputFolder, tile.getName());
 			OMEXMLMetadata metadata = getMetadata(tile);
 			PixelType pxlType = metadata.getPixelsType(0);
@@ -260,13 +262,13 @@ public class ThresholdingProcessor {
 					bytesArr = byteShortBuf.array();
 					break;
 				case FLOAT:
-					LOGGER.log(Level.INFO, tile.getName() + " is a 32bpp image.");
-					LOGGER.log(Level.INFO, "32bpp images are not handled by the thresholding plugin. Please convert the image to an 8bpp or a 16bpp image.");
-					throw new Exception("Wrong image type!");
+					LOGGER.log(Level.WARNING, tile.getName() + " is a 32bpp image.");
+					LOGGER.log(Level.SEVERE, "32bpp images are not handled by the thresholding plugin. Please convert the image to an 8bpp or a 16bpp image.");
+					throw new UnsupportedOperationException("Unsupported image type.");
 				default:
-					LOGGER.log(Level.INFO, "the type of this image: " + tile.getName() + " is not 8bpp nor 16bpp");
-					LOGGER.log(Level.INFO, "Please convert the image type to 8bpp or 16bpp.");
-					throw new Exception("Wrong image type!");
+					LOGGER.log(Level.WARNING, "the type of this image: " + tile.getName() + " is not 8bpp nor 16bpp");
+					LOGGER.log(Level.SEVERE, "Please convert the image type to 8bpp or 16bpp.");
+					throw new UnsupportedOperationException("Unsupported image type.");
 			}
 
 
@@ -278,7 +280,29 @@ public class ThresholdingProcessor {
 				imageWriter.setInterleaved(metadata.getPixelsInterleaved(0));
 				imageWriter.setCompression(CompressionType.LZW.getCompression());
 				imageWriter.setId(outputFile.getPath());
-				imageWriter.saveBytes(0, bytesArr);
+
+				// Determined the number of tiles to read and write
+				int nXTiles = this.width / TILE_SIZE;
+				int nYTiles = this.height / TILE_SIZE;
+				if (nXTiles * TILE_SIZE != this.width) nXTiles++;
+				if (nYTiles * TILE_SIZE != this.height) nYTiles++;
+
+				for (int k=0; k<nYTiles; k++) {
+					for (int l=0; l<nXTiles; l++) {
+						
+						int tileX = l * TILE_SIZE;
+						int tileY = k * TILE_SIZE;
+						
+						int effTileSizeX = (tileX + TILE_SIZE) < this.width ? TILE_SIZE : this.width - tileX;
+						int effTileSizeY = (tileY + TILE_SIZE) < this.height ? TILE_SIZE : this.height - tileY;
+
+						//buf = reader.openBytes(0, tileX, tileY, effTileSizeX, effTileSizeY);
+						imageWriter.saveBytes(0, bytesArr, tileX, tileY, effTileSizeX, effTileSizeY);
+					}
+				}
+				
+				
+				//imageWriter.saveBytes(0, bytesArr);
 
 			} catch (FormatException | IOException ex) {
 				throw new RuntimeException("No image writer found for file "
@@ -305,6 +329,8 @@ public class ThresholdingProcessor {
 			reader.setOriginalMetadataPopulated(false);
 			reader.setMetadataStore(metadata);
 			reader.setId(tile.getPath());
+			this.width = reader.getSizeX();
+			this.height = reader.getSizeY();
 		} catch (FormatException | IOException ex) {
 			throw new RuntimeException("No image reader found for file "
 					+ tile, ex);
