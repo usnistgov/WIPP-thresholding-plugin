@@ -1,9 +1,15 @@
 {
-	"name": "ThresholdingPlugin",
-	"version": "0.1.2",
+	"name": "Thresholding plugin",
+	"version": "1.0.0",
 	"title": "Thresholding plugin",
+	"author": "Mohamed Ouladi & Peter Bajcsy",
+    "institution": "National Institute of Standards and Technology",
+    "repository": "https://github.com/usnistgov/WIPP-thresholding-plugin",
+    "website": "https://imagej.net/Thresholding",
+    "citation": null,
 	"description": "Thresholding methods from ImageJ",
 	"containerId": "wipp/wipp-thresh-plugin:0.1.2",
+
 
 	"inputs": [
 		{
