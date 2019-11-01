@@ -12,34 +12,50 @@
 package gov.nist.itl.ssd.thresholding;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import gov.nist.itl.ssd.thresholding.utils.BioFormatsUtils;
 
-import ij.IJ;
 import ij.ImagePlus;
-import ij.io.Opener;
 import ij.process.ImageProcessor;
+import loci.common.DebugTools;
+import loci.common.services.DependencyException;
+import loci.common.services.ServiceException;
+import loci.common.services.ServiceFactory;
+import loci.formats.FormatException;
+import loci.formats.IFormatReader;
+import loci.formats.ImageReader;
+import loci.formats.codec.CompressionType;
+import loci.formats.ome.OMEXMLMetadata;
+import loci.formats.out.OMETiffWriter;
+import loci.formats.services.OMEXMLService;
+import ome.xml.model.enums.PixelType;
 
 /**
-*
-* @author Peter Bajcsy <peter.bajcsy at nist.gov>
-* @author Mohamed Ouladi <mohamed.ouladi at nist.gov>
-*/
+ *
+ * @author Peter Bajcsy <peter.bajcsy at nist.gov>
+ * @author Mohamed Ouladi <mohamed.ouladi at nist.gov>
+ */
 
 public class ThresholdingProcessor {
-	
+
+	// Tile size used in WIPP
+	private static final int TILE_SIZE = 1024;
+	private static final Logger LOGGER = Logger.getLogger(ThresholdingProcessor.class.getName());
+	private int width;
+	private int height;
+
 	public File inputFolder;
 	public File outputFolder;
 	public ThresholdingType thresholdingType;
 	public double threshold;
 	public int nbCpus;
 
-    public ThresholdingProcessor(File inputFolder, File outputFolder, ThresholdingType thresholdingType,
+	public ThresholdingProcessor(File inputFolder, File outputFolder, ThresholdingType thresholdingType,
 			double threshold, int nbCpus) {
 		super();
 		this.inputFolder = inputFolder;
@@ -49,33 +65,34 @@ public class ThresholdingProcessor {
 		this.nbCpus = nbCpus;
 	}
 
-	public void runTresh() throws IOException {
-        if (inputFolder == null) {
-            throw new NullPointerException("Input folder is null");
-        }
+	public void runTresh() throws IOException, Exception {
+		
+		if (inputFolder == null) {
+			throw new NullPointerException("Input folder is null");
+		}
 
-        File[] tiles =  inputFolder.listFiles(new FilenameFilter() {
+		File[] tiles =  inputFolder.listFiles(new FilenameFilter() {
 			public boolean accept(File dir, String name) {
 				return name.toLowerCase().endsWith(".tif");
 			}
 		});
 
-        if (tiles == null) {
-        	throw new NullPointerException("Input folder is empty");
-        }
+		if (tiles == null || tiles.length == 0) {
+			throw new NullPointerException("Input folder is empty or no images were found.");
+		}
 
-        boolean created = outputFolder.mkdirs();
-        if (!created && !outputFolder.exists()) {
-            throw new IOException("Can not create folder " + outputFolder);
-        }
+		boolean created = outputFolder.mkdirs();
+		if (!created && !outputFolder.exists()) {
+			throw new IOException("Can not create folder " + outputFolder);
+		}
 
-        for(File tile : tiles){
-        
-        	Opener opener = new Opener();  
-	        ImagePlus imp = opener.openImage(tile.getAbsolutePath());  
-        
-        	ImageProcessor ip = imp.getProcessor();
-        
+		for(File tile : tiles){
+
+			//Reading a tiled tiff with Bioformats and converting it to an ImagePlus 
+			ImagePlus imp = BioFormatsUtils.readImage(tile.getAbsolutePath());
+
+			ImageProcessor ip = imp.getProcessor();
+
 			int xe = ip.getWidth();
 			int ye = ip.getHeight();
 			int x, y, c=0;
@@ -114,7 +131,7 @@ public class ThresholdingProcessor {
 			//////////////////////////////////////////
 
 			double threshold = 0.0;
-			
+
 			// Apply the selected algorithm
 			if (data2.length < 2){
 				threshold = 0;
@@ -176,16 +193,16 @@ public class ThresholdingProcessor {
 			if(this.thresholdingType != ThresholdingType.Manual){
 				threshold+=minbin; // add the offset of the histogram
 			}
-			
-			
+
+
 			/////////////////////////////////////////
 			double min = ip.getMin();
 			double max = ip.getMax();
-			System.out.println("INFO: min ="+ min + ", max=" + max);
-			
+			LOGGER.log(Level.INFO, "min = " + min + ", max=" + max);
+
 //			threshold = 0.5*(max+min);//this.threshold;
-			System.out.println("INFO: thresh ="+ threshold);
-			
+			LOGGER.log(Level.INFO, "thresh = " + threshold);
+
 			// saves out the threshold value from auto-threshold methods
 /*			File f = new File(outputFolder, "threshold.txt");
 			String str = Double.toString(threshold);
@@ -200,33 +217,126 @@ public class ThresholdingProcessor {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}*/
-	
+
 			if (threshold>-1) { 
 				//threshold it
-/*				if (doIset){
+				/*				if (doIset){
 					if (doIwhite) 
 						ip.setThreshold(threshold+1, data.length - 1, ImageProcessor.RED_LUT);//IJ.setThreshold(threshold+1, data.length - 1);
 					else
 						ip.setThreshold(0, threshold, ImageProcessor.RED_LUT);//IJ.setThreshold(0,threshold);
 				}
 				else{*/
-					for( y=0;y<ye;y++) {
-						for(x=0;x<xe;x++){
-							if(ip.getPixel(x,y)>threshold)
-								ip.putPixel(x,y,c);
-							else
-								ip.putPixel(x,y,b);
-						}
+				for( y=0;y<ye;y++) {
+					for(x=0;x<xe;x++){
+						if(ip.getPixel(x,y)>threshold)
+							ip.putPixel(x,y,c);
+						else
+							ip.putPixel(x,y,b);
 					}
-					ip.setThreshold(data.length - 1, data.length - 1, ImageProcessor.NO_LUT_UPDATE);
+				}
+				ip.setThreshold(data.length - 1, data.length - 1, ImageProcessor.NO_LUT_UPDATE);
 				//}
 			}
 			
-			ImagePlus res = new ImagePlus(tile.getName(), ip);			
-			File outputImg = new File(outputFolder, tile.getName());
-			IJ.saveAsTiff(res, outputImg.getAbsolutePath());
-        }
+			File outputFile = new File(outputFolder, tile.getName());
+			OMEXMLMetadata metadata = getMetadata(tile);
+			PixelType pxlType = metadata.getPixelsType(0);
+			
+			byte[] bytesArr = null;
+			
+			switch(pxlType) {
+				case UINT8:
+					LOGGER.log(Level.INFO, tile.getName() + " is an 8bpp image");
+					bytesArr = (byte[]) ip.getPixels();
+					break;
+				case UINT16: 
+					LOGGER.log(Level.INFO, tile.getName() + " is a 16bpp image");
+					short[] shorts = (short[]) ip.getPixels();
+					
+					//Converting short array to bytes array
+					ByteBuffer byteShortBuf = ByteBuffer.allocate(shorts.length*2);
+					for (short s: shorts) {
+						byteShortBuf.putShort(s);
+					}
+					bytesArr = byteShortBuf.array();
+					break;
+				case FLOAT:
+					LOGGER.log(Level.WARNING, tile.getName() + " is a 32bpp image.");
+					LOGGER.log(Level.SEVERE, "32bpp images are not handled by the thresholding plugin. Please convert the image to an 8bpp or a 16bpp image.");
+					throw new UnsupportedOperationException("Unsupported image type.");
+				default:
+					LOGGER.log(Level.WARNING, "the type of this image: " + tile.getName() + " is not 8bpp nor 16bpp");
+					LOGGER.log(Level.SEVERE, "Please convert the image type to 8bpp or 16bpp.");
+					throw new UnsupportedOperationException("Unsupported image type.");
+			}
 
-    }
+
+			//Writing the output tiled tiff
+			try (OMETiffWriter imageWriter = new OMETiffWriter()) {
+				imageWriter.setMetadataRetrieve(metadata);
+				imageWriter.setTileSizeX(TILE_SIZE);
+				imageWriter.setTileSizeY(TILE_SIZE);
+				imageWriter.setInterleaved(metadata.getPixelsInterleaved(0));
+				imageWriter.setCompression(CompressionType.LZW.getCompression());
+				imageWriter.setId(outputFile.getPath());
+
+				// Determined the number of tiles to read and write
+				int nXTiles = this.width / TILE_SIZE;
+				int nYTiles = this.height / TILE_SIZE;
+				if (nXTiles * TILE_SIZE != this.width) nXTiles++;
+				if (nYTiles * TILE_SIZE != this.height) nYTiles++;
+
+				for (int k=0; k<nYTiles; k++) {
+					for (int l=0; l<nXTiles; l++) {
+						
+						int tileX = l * TILE_SIZE;
+						int tileY = k * TILE_SIZE;
+						
+						int effTileSizeX = (tileX + TILE_SIZE) < this.width ? TILE_SIZE : this.width - tileX;
+						int effTileSizeY = (tileY + TILE_SIZE) < this.height ? TILE_SIZE : this.height - tileY;
+
+						//buf = reader.openBytes(0, tileX, tileY, effTileSizeX, effTileSizeY);
+						imageWriter.saveBytes(0, bytesArr, tileX, tileY, effTileSizeX, effTileSizeY);
+					}
+				}
+				
+				
+				//imageWriter.saveBytes(0, bytesArr);
+
+			} catch (FormatException | IOException ex) {
+				throw new RuntimeException("No image writer found for file "
+						+ outputFile, ex);
+			}
+		}
+	}
+	
+	//Inspired from the WIPP-image-assembling-plugin
+	private OMEXMLMetadata getMetadata(File tile) {
+		OMEXMLMetadata metadata;
+		try {
+			OMEXMLService omeXmlService = new ServiceFactory().getInstance(
+					OMEXMLService.class);
+			metadata = omeXmlService.createOMEXMLMetadata();
+		} catch (DependencyException ex) {
+			throw new RuntimeException("Cannot find OMEXMLService", ex);
+		} catch (ServiceException ex) {
+			throw new RuntimeException("Cannot create OME metadata", ex);
+		}
+		try (ImageReader imageReader = new ImageReader()) {
+			IFormatReader reader;
+			reader = imageReader.getReader(tile.getPath());
+			reader.setOriginalMetadataPopulated(false);
+			reader.setMetadataStore(metadata);
+			reader.setId(tile.getPath());
+			this.width = reader.getSizeX();
+			this.height = reader.getSizeY();
+		} catch (FormatException | IOException ex) {
+			throw new RuntimeException("No image reader found for file "
+					+ tile, ex);
+		}
+
+		return metadata;
+	}
 }
 

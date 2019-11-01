@@ -1,5 +1,7 @@
 FROM openjdk:8-jdk-alpine
-LABEL maintainer="National Institue of Standards and Technology"
+LABEL maintainer="National Institute of Standards and Technology"
+
+COPY VERSION /
 
 ENV DEBIAN_FRONTEND noninteractive
 ARG EXEC_DIR="/opt/executables"
@@ -10,12 +12,11 @@ RUN mkdir -p ${EXEC_DIR} \
     && mkdir -p ${DATA_DIR}/inputs \
     && mkdir ${DATA_DIR}/outputs
 
-#Copy executable
-COPY target/wipp-thresholding-plugin-0.0.1-SNAPSHOT-jar-with-dependencies.jar ${EXEC_DIR}/wipp-thresholding-plugin.jar
-#COPY dist/Thresholding/target/threshLaunch.sh ${EXEC_DIR}/.
+# Copy wipp-thresholding-plugin JAR
+COPY target/wipp-thresholding-plugin*.jar ${EXEC_DIR}/wipp-thresholding-plugin.jar
 
-# Set working directory
+#Set working dir
 WORKDIR ${EXEC_DIR}
 
 # Default command. Additional arguments are provided through the command line
-ENTRYPOINT ["/usr/bin/java", "-jar", "wipp-thresholding-plugin.jar"]
+ENTRYPOINT ["java", "-jar", "wipp-thresholding-plugin.jar"]
