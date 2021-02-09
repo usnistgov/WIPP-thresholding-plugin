@@ -13,6 +13,7 @@ package gov.nist.itl.ssd.thresholding;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.cli.CommandLine;
@@ -36,13 +37,7 @@ public class ThresholdingMain {
 	
 	
 	public static void main(String[] args) throws IOException, Exception {
-		// sanity checks
-		int i;
-		System.out.println("argument length=" + args.length);
-		for (i = 0; i < args.length; i++) {
-			System.out.println("args[" + i + "]:" + args[i]);
-		}	
-
+		
 		Options options = new Options();
 
 		Option input = new Option("i", "input", true, "input folder");
@@ -57,7 +52,6 @@ public class ThresholdingMain {
 		thresholdType.setRequired(true);
 		options.addOption(thresholdType);
 
-
 		Option thresholdValue = new Option("tvalue", "thresholdvalue", true, "threshold value for Manual threshold method type");
 		thresholdValue.setRequired(false);
 		options.addOption(thresholdValue);	        
@@ -70,17 +64,17 @@ public class ThresholdingMain {
 			cmd = parser.parse(options, args);
 		} catch (ParseException e) {
 			System.out.println(e.getMessage());
-			formatter.printHelp("utility-name", options);
+			formatter.printHelp("wipp-thresholding-plugin-{version}.jar", options);
 
 			System.exit(1);
 			return;
 		}
-
+		
 		String inputFileDir = cmd.getOptionValue("input");
 		String outputFileDir = cmd.getOptionValue("output");
 
-		System.out.println(inputFileDir);
-		System.out.println(outputFileDir);
+		LOG.log(Level.INFO, "Input directory: " + inputFileDir);
+		LOG.log(Level.INFO, "Output directory: " + outputFileDir);
 
 		String threshTypeStr = cmd.getOptionValue("thresholdtype");
 		String threshValStr = cmd.getOptionValue("thresholdvalue");
@@ -93,28 +87,28 @@ public class ThresholdingMain {
 
 		ThresholdingType threshType = ThresholdingTypeHandler.matchThresholdingType(threshTypeStr);
 		if(threshType.equals(ThresholdingType.Invalid)){
-			System.err.println("ERROR: the threshold method type is invalid");
-			return;
+			LOG.log(Level.SEVERE, "ERROR: the threshold method type is invalid");
+			System.exit(-1);
 		}
 		
+		LOG.log(Level.INFO, "Threshold type : " + threshType);
+
 		if(threshType.equals(ThresholdingType.Manual)){
-			threshold = Double.valueOf(threshValStr);//21800.0;			
+			threshold = Double.valueOf(threshValStr);	
+			LOG.log(Level.INFO, "Threshold value : " + threshold);
 		}
 
-		System.out.println("threshType : " + threshType);
-			
-		LOG.info("Launching Thresholding!!");
+		LOG.info("Starting...");
 		
-		ThresholdingProcessor tp = new ThresholdingProcessor(inputFolder, outputFolder, threshType, threshold, nbCpus);
-		tp.runTresh();
-
-		int exitVal = 0;
-		String err = "";
-		
-		if (exitVal != 0){
-			throw new RuntimeException(err);
+		try {
+			ThresholdingProcessor tp = new ThresholdingProcessor(inputFolder, outputFolder, threshType, threshold, nbCpus);
+			tp.runTresh();
+		} catch(Exception ex) {
+			LOG.log(Level.SEVERE, ex.getMessage());
+			System.exit(-1);
 		}
-		LOG.info("The end of Thresholding!");  
+
+		LOG.info("Done.");  
 	}
 	
 }
