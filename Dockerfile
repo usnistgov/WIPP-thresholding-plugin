@@ -15,8 +15,6 @@ RUN mkdir -p ${EXEC_DIR} \
 # Copy wipp-thresholding-plugin JAR
 COPY target/wipp-thresholding-plugin*.jar ${EXEC_DIR}/wipp-thresholding-plugin.jar
 
-#Set working dir
-WORKDIR ${EXEC_DIR}
 
 # Default command. Additional arguments are provided through the command line
-ENTRYPOINT ["java", "-jar", "wipp-thresholding-plugin.jar"]
+ENTRYPOINT ["java", "-jar", "/opt/executables/wipp-thresholding-plugin.jar"]
